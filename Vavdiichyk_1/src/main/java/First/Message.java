@@ -1,6 +1,10 @@
 package First;
 
+import javax.crypto.*;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -8,18 +12,35 @@ public class Message {
     private int cType;
     private int bUserId;
     private byte[] message;
+    private int mLength;
+
+    public SecretKeySpec secretKey =
+            new SecretKeySpec("Bar12345Bar12345".getBytes(),"AES");
 
     public Message(ByteBuffer buffer, int wLen){
         this.cType = buffer.getInt(0);
         this.bUserId = buffer.getInt(4);
         this.message = new byte[wLen - Integer.BYTES * 2];
-        buffer.get(this.message, Integer.BYTES*2, wLen);
+        System.arraycopy(buffer.array(),8,this.message,0,wLen - Integer.BYTES * 2);
+        //buffer.get(this.message, Integer.BYTES*2, wLen);
     }
 
     public Message(int cType, int bUserId, byte[] message){
         this.cType = cType;
         this.bUserId = bUserId;
-        this.message = message;
+        this.mLength = message.length;
+        try {
+            Cipher cipher = Cipher.getInstance("AES");
+            cipher.init(Cipher.ENCRYPT_MODE,secretKey);
+            this.message = cipher.doFinal(message);
+            System.out.println(Arrays.toString(message));
+        } catch (NoSuchAlgorithmException
+                | NoSuchPaddingException
+                | InvalidKeyException
+                | IllegalBlockSizeException
+                | BadPaddingException e) {
+            e.printStackTrace();
+        }
     }
 
     public Message(){}
@@ -27,11 +48,18 @@ public class Message {
         return message.length+8;
     }
 
+    public int getmLength(){return mLength;}
+
     public byte[] getMessage() {
-        return message;
+        return ByteBuffer.allocate(message.length+8)
+                .putInt(cType)
+                .putInt(bUserId)
+                .put(message)
+                .array();
     }
 
     public byte[] encodeMessage(){
+
         return ByteBuffer.allocate(Integer.BYTES*2+message.length)
                 .putInt(cType)
                 .putInt(bUserId)

@@ -3,7 +3,14 @@ package First;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.nio.ByteBuffer;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 public class Packet {
     private byte bMagic = 0x13;
@@ -47,17 +54,20 @@ public class Packet {
 
     public Packet(byte[] bytes) throws Exception {
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
-        Message mess = new Message(buffer, this.wLen);
+        byte[] arr =  new byte[buffer.getInt(10)];
+        System.arraycopy(buffer.array(),16,arr,0,arr.length);
+        ByteBuffer messBuffer = ByteBuffer.wrap(arr);
+        Message mess = new Message(messBuffer, arr.length);
         byte[] header = ByteBuffer.allocate(1+1+8+4)
                 .put(buffer.get(0))
                 .put(buffer.get(1))
                 .putLong(buffer.getLong(2))
                 .putInt(buffer.getInt(10))
                 .array();
-        if((crc16(header) != buffer.getShort(14))
-                || (crc16(mess.getMessage()) !=  buffer.getShort(16+wLen-1))){
-            Exception e = new Exception("Wrong CRC16");
-            throw e;
+        if ((crc16(header) != buffer.getShort(14)) ||
+        (crc16(mess.getMessage()) !=  buffer.getShort(16+buffer.getInt(10)))){
+                Exception e = new Exception("Wrong CRC16");
+                throw e;
         }
         this.bSrc = buffer.get(1);
         this.bPktId = buffer.getLong(2);
@@ -99,15 +109,38 @@ public class Packet {
             ByteBuffer wrap = ByteBuffer.wrap(packet);
 
             //wrap.get();
+        byte[] header = ByteBuffer.allocate(1+1+8+4)
+                .put(bMagic)
+                .put(bSrc)
+                .putLong(bPktId)
+                .putInt(wLen)
+                .array();
+        if ((crc16(header) != wrap.getShort(14)) ||
+                (crc16(bMsg.getMessage()) !=  wrap.getShort(16+wrap.getInt(10)))){
+            Exception e = new Exception("Wrong CRC16");
+            try {
+                throw e;
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
             int cType = wrap.getInt(16);
             int bUserId = wrap.getInt(20);
-            byte[] messageBuffer = new byte[wLen];
-            System.arraycopy(packet,16,messageBuffer,0,wLen);
-
-            System.out.println("Type: " + cType + ", UserId: " + bUserId);
+            byte[] messageBuffer = new byte[wLen-8];
+            System.arraycopy(packet,24,messageBuffer,0,wLen-8);
+            ByteBuffer buffer = ByteBuffer.allocate(bMsg.getmLength()+8);
+        try {
+            Cipher decodeCipher = Cipher.getInstance("AES");
+            decodeCipher.init(Cipher.DECRYPT_MODE,bMsg.secretKey);
+            byte[] decryptMessage = decodeCipher.doFinal(messageBuffer);
+            buffer.putInt(cType).putInt(bUserId).put(decryptMessage);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException | IllegalBlockSizeException | BadPaddingException e) {
+            e.printStackTrace();
+        }
+        System.out.println("Type: " + cType + ", UserId: " + bUserId);
 // validate crc16
-            ByteBuffer buffer = ByteBuffer.wrap(messageBuffer);
-            return new Message(buffer,wLen);
+        System.out.println(Arrays.toString(buffer.array()));
+            return new Message(buffer,bMsg.getmLength()+8);
     }
     private static short crc16(byte[] bytes) {
         int[] table = {
