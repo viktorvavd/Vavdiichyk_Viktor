@@ -11,13 +11,17 @@ import java.util.Arrays;
 
 public class Encriptor extends Thread {
 
+    private int commandID;
+    private Storage storage;
     private Message message;
 
     private SecretKeySpec secretKey =
             new SecretKeySpec("Bar12345Bar12345".getBytes(), "AES");
 
-    public Encriptor(Message message){
+    public Encriptor(Message message, Storage storage){
+        this.storage = storage;
         this.message = message;
+        this.commandID = message.getcType();
         this.run();
     }
 

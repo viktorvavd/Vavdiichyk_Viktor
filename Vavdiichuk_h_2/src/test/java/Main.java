@@ -1,4 +1,8 @@
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
+import java.util.LinkedList;
+import java.util.List;
+
+
 public class Main {
     @Test
     public void shouldHandleType(){
@@ -17,8 +21,4 @@ public class Main {
         RandomMessage randomMessage3 = new RandomMessage(1, 14, storage);
     }
 
-    @Override
-    public Class<? extends Annotation> annotationType() {
-        return null;
-    }
 }

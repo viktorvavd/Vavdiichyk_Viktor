@@ -7,7 +7,7 @@ public class Processor extends Thread {
     private Storage storage = new Storage();
     private int commandID;
 
-    public Processor(Message message){
+    public Processor(Message message ,Storage storage){
         this.commandID = message.getcType();
         this.storage = storage;
         this.message = message;

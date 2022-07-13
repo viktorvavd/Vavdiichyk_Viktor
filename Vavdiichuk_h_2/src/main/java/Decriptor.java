@@ -5,13 +5,18 @@ import java.util.Arrays;
 
 public class Decriptor extends Thread{
 
+    private int commandID;
     private SecretKeySpec secretKey =
             new SecretKeySpec("Bar12345Bar12345".getBytes(), "AES");
+    private Storage storage;
 
     private byte[] packet;
     private Message command;
 
-    public Decriptor(byte[] packet) {
+    public Decriptor(byte[] packet, Storage storage) {
+        ByteBuffer buffer = ByteBuffer.wrap(packet);
+        this.storage = storage;
+        this.commandID = buffer.getInt(16);
         this.packet = packet;
         this.start();
     }
@@ -35,16 +40,16 @@ public class Decriptor extends Thread{
                 }
                 if (commandID == 1) {
                     decript(this.packet);
-                     processor.process(command);
+                     processor.process(command,storage);
                 } else if (commandID == 2) {
                     decript(this.packet);
-                    processor.process(command);
+                    processor.process(command,storage);
                 } else if (commandID == 3) {
                     decript(this.packet);
-                    processor.process(command);
+                    processor.process(command,storage);
                 } else if (commandID == 4) {
                     decript(this.packet);
-                    processor.process(command);
+                    processor.process(command,storage);
                 }
                 storage.notify();
             } catch (Exception e) {

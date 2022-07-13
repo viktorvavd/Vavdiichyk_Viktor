@@ -22,11 +22,22 @@ public class RandomMessage {
     private Message bMsg;
     private short wCrc16_end;
 
-    public RandomMessage(int Type, int Src){
-        this.random = new Random();
-        this.bSrc = (byte) (random.nextInt(1,100));
-        this.bPktId = random.nextLong(1,1000);
-        this.wLen = random.nextInt(9,109);
+    public RandomMessage(int Type, int Src, Storage storage){
+        //random = new Math.random();
+        this.bSrc = (byte) Src;
+        this.bPktId = (long) (Math.random()*(99)+1);
+
+        if (Type == 1 || Type == 2) {
+            this.wLen = 12;
+        } else if (Type == 4) {
+            int numberOfProducts = (int) (Math.random() * (49) + 1);
+            this.wLen = numberOfProducts * 4 + 8;
+        } else if (Type == 3) {
+            this.wLen = 20;
+        }else{
+            throw new RuntimeException("Wrong packet.Message type");
+        }
+
         ByteBuffer header = ByteBuffer.allocate(14)
                 .put(bMagic)
                 .put(bSrc)
@@ -35,7 +46,7 @@ public class RandomMessage {
         this.wCrc16 = crc16(header.array());
         byte[] genMess = new byte[wLen-8];
         for(int i = 0; i < genMess.length; i++){
-            genMess[i] = (byte) (random.nextInt(1,50));
+            genMess[i] = (byte) (Math.random()*(9)+1);
         }
         this.wCrc16_end = crc16(genMess);
         try {
@@ -50,7 +61,7 @@ public class RandomMessage {
         } catch (IllegalBlockSizeException | BadPaddingException | InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException e) {
             e.printStackTrace();
         }
-        Receiver receiver = new Receiver(this.getBytesArr());
+        Receiver receiver = new Receiver(this.getBytesArr(), storage);
     }
 
     public byte[] getBytesArr(){

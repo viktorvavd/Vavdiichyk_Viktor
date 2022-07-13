@@ -19,8 +19,8 @@ public class Sender {
             decodeCipher.init(Cipher.DECRYPT_MODE, secretKey);
             byte[] decryptMessage = decodeCipher.doFinal(encryptMess);
             System.out.println("Decrypted: " + "Type: " + buffer.getInt(0) +
-                    ", Id:" + buffer.getInt(4)
-                    + " " + Arrays.toString(decryptMessage));
+                    "; Id: " + buffer.getInt(4)
+                    + "; Answer {" + (char) decryptMessage[0] + (char) decryptMessage[1] + "}");
         }catch (Exception e){
             throw new RuntimeException(e);
         }
