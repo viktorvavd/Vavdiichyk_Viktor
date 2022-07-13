@@ -24,7 +24,34 @@ public class Encriptor extends Thread {
     @Override
     public void run() {
         super.run();
-        Sender sender = new Sender(encrypt(this.message));
+        Sender sender;
+        synchronized (storage) {
+            try {
+                while (commandID != storage.getState()) {
+                    storage.wait(100L);
+                    if(commandID != storage.getState()){
+                        if(commandID == 1 || commandID == 2 || commandID == 3){
+                            commandID++;
+                        }else{
+                            commandID = 1;
+                        }
+                    }
+                }
+
+                if (commandID == 1) {
+                    sender = new Sender(encrypt(this.message));
+                } else if (commandID == 2) {
+                    sender = new Sender(encrypt(this.message));
+                } else if (commandID == 3) {
+                    sender = new Sender(encrypt(this.message));
+                } else if(commandID == 4){
+                    sender = new Sender(encrypt(this.message));
+                }
+                storage.notify();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private byte[] encrypt(Message message) {
