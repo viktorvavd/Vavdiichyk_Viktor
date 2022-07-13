@@ -19,11 +19,37 @@ public class Decriptor extends Thread{
     @Override
     public void run() {
         super.run();
-        try {
-            decript(this.packet);
-            Processor processor = new Processor(command);
-        } catch (Exception e) {
-            e.printStackTrace();
+        Processor processor = new Processor();
+        synchronized (storage) {
+            try {
+                while (commandID != storage.getState()) {
+                    storage.wait(100L);
+                    if(commandID != storage.getState()){
+                        if(commandID == 2 || commandID == 3 || commandID == 4){
+                            commandID--;
+                        }else{
+                            commandID = 4;
+                        }
+
+                    }
+                }
+                if (commandID == 1) {
+                    decript(this.packet);
+                     processor.process(command);
+                } else if (commandID == 2) {
+                    decript(this.packet);
+                    processor.process(command);
+                } else if (commandID == 3) {
+                    decript(this.packet);
+                    processor.process(command);
+                } else if (commandID == 4) {
+                    decript(this.packet);
+                    processor.process(command);
+                }
+                storage.notify();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
